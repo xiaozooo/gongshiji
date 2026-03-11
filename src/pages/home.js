@@ -10,11 +10,22 @@ export const DEFAULT_START_TIME = '09:00'
 export const DEFAULT_END_TIME = '17:00'
 
 export function getWagePlaceholder(job) {
-  return job ? `当前工作工价：¥${job.wage}/h` : '工价'
+  return job ? `¥${job.wage}` : '工价'
 }
 
 export function getHomeMemoFieldMarkup() {
   return ''
+}
+
+export function formatWorkDurationHours(workMinutes) {
+  const hours = (Number(workMinutes) || 0) / 60
+  return Number(hours.toFixed(2)).toString()
+}
+
+export function formatWorkMinutesBreakdown(totalMinutes, breakMinutes) {
+  if (totalMinutes <= 0) return ''
+  const workMinutes = calcNetWorkMinutes(totalMinutes, breakMinutes)
+  return `总${totalMinutes}分钟 - 休息${breakMinutes}分钟 = 工作${workMinutes}分钟`
 }
 
 /** Format Date to YYYY-MM-DD for date input */
@@ -102,11 +113,11 @@ export async function render() {
       <!-- Time validation hint -->
       <div id="home-time-hint" class="form-error" style="margin-top:-12px;margin-bottom:var(--space-3);min-height:16px;"></div>
 
-      <!-- Minutes display -->
+      <!-- Duration display -->
       <div class="card-white" style="text-align:center;margin-bottom:var(--space-4);">
         <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.4px;">工作时长</div>
         <div class="minute-display">
-          <span id="home-min-num">0</span><span class="minute-unit">分钟</span>
+          <span id="home-min-num">0</span><span class="minute-unit">小时</span>
         </div>
         <div id="home-hour-sub" style="font-size:13px;color:var(--color-text-muted);min-height:18px;"></div>
         <div id="home-gross" style="font-size:14px;color:var(--color-accent);font-weight:500;min-height:20px;margin-top:4px;"></div>
@@ -205,10 +216,9 @@ export async function render() {
       timeHint.textContent = ''
     }
 
-    minNum.textContent = workMinutes
+    minNum.textContent = formatWorkDurationHours(workMinutes)
     if (totalMinutes > 0) {
-      const workHours = workMinutes / 60
-      hourSub.textContent = `总 ${totalMinutes} 分钟 - 休息 ${breakMinutes} 分钟 = ${formatHours(workHours)} 小时`
+      hourSub.textContent = formatWorkMinutesBreakdown(totalMinutes, breakMinutes)
     } else {
       hourSub.textContent = ''
     }
