@@ -2,7 +2,7 @@
 
 一个面向小时工、兼职和临时用工场景的本地工时记录 PWA。
 
-在线地址：`https://xiaozooo.github.io/gongshiji/`
+[在线地址](https://xiaozooo.github.io/gongshiji)
 
 ## 功能
 
