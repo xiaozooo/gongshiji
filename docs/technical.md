@@ -12,9 +12,7 @@
 | 本地存储 | IndexedDB + `idb` | 数据持久化 |
 | PWA | `vite-plugin-pwa` | manifest、SW、离线缓存 |
 | 测试 | `node:test` | `tests/` 下单元测试 |
-| 加密工具 | Web Crypto API | 仅工具函数存在，UI 未接入 |
-
-当前 `package.json` 中只有两个运行时依赖：`idb` 与 `vite-plugin-pwa` 相关构建依赖；文档中不应再把 `flatpickr` 视为项目依赖。
+当前 `package.json` 中只有一个运行时依赖 `idb`，以及 `vite`、`vite-plugin-pwa` 两个构建相关依赖；文档中不应再把 `flatpickr` 视为项目依赖。
 
 ## 2. 目录结构
 
@@ -38,14 +36,11 @@ gongshiji/
 │   ├── pages/
 │   │   ├── history.js
 │   │   ├── home.js
-│   │   ├── jobs.js
 │   │   └── settings.js
 │   ├── utils/
 │   │   ├── colors.js
 │   │   ├── conflict.js
-│   │   ├── crypto.js
 │   │   ├── csv.js
-│   │   ├── debounce.js
 │   │   ├── historyStats.js
 │   │   ├── recordCopy.js
 │   │   └── time.js
@@ -57,8 +52,6 @@ gongshiji/
 ├── package.json
 └── vite.config.js
 ```
-
-说明：`src/pages/jobs.js` 仍在仓库中，但当前 `main.js` 只注册了 `#home`、`#history`、`#settings` 三个路由。
 
 ## 3. 应用启动流程
 
@@ -198,8 +191,6 @@ gongshiji/
 - 岗位管理面板
 - CSV 导出 / CSV 导入
 - 清空全部本地数据
-
-注意：虽然仓库有 `src/utils/crypto.js`，但设置页尚未提供加密备份入口。
 
 ### 6.6 工具模块
 

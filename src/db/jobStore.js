@@ -1,8 +1,8 @@
 import { getDB } from './database.js'
 import { pickJobColor } from '../utils/colors.js'
 
-const DEFAULT_JOB_NAME = '默认工作'
-const DEFAULT_JOB_WAGE = 0
+export const DEFAULT_JOB_NAME = '小时工'
+export const DEFAULT_JOB_WAGE = 10
 
 function newJob(name, wage, currency = '', notes = '', isDefault = false) {
     const now = new Date().toISOString()

@@ -13,7 +13,6 @@ import {
   localInputToISO
 } from '../utils/time.js'
 import { pickJobColor } from '../utils/colors.js'
-import { generateCSV, downloadFile } from '../utils/csv.js'
 import {
   getWeekRange,
   getMonthRange,
@@ -22,6 +21,10 @@ import {
   summarizeTotals,
   enumerateDates
 } from '../utils/historyStats.js'
+
+export function getHistoryHeaderActionsMarkup() {
+  return ''
+}
 
 function toDateParts(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number)
@@ -76,7 +79,7 @@ export async function render() {
     page.innerHTML = `
       <div class="page-header">
         <span class="page-title">历史</span>
-        <button class="btn btn-ghost btn-sm" id="hist-export">导出当前视图</button>
+        ${getHistoryHeaderActionsMarkup()}
       </div>
       <div class="page-content">
 
@@ -116,12 +119,6 @@ export async function render() {
       mode = btn.dataset.mode
       activeDateFilter = null
       reload()
-    })
-
-    page.querySelector('#hist-export')?.addEventListener('click', () => {
-      if (!records.length) { showToast('当前视图没有记录可导出', 'warning'); return }
-      downloadFile(generateCSV(records), `工时记_${mode}_${Date.now()}.csv`, 'text/csv;charset=utf-8')
-      showToast(`已导出 ${records.length} 条记录`)
     })
 
     page.querySelector('#hist-prev')?.addEventListener('click', () => {

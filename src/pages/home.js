@@ -6,6 +6,17 @@ import { getLocalDate, getYearMonth, formatHours, calcMinutes, calcNetWorkMinute
 import { pickJobColor } from '../utils/colors.js'
 import { resolveCopyDate } from '../utils/recordCopy.js'
 
+export const DEFAULT_START_TIME = '09:00'
+export const DEFAULT_END_TIME = '17:00'
+
+export function getWagePlaceholder(job) {
+  return job ? `当前工作工价：¥${job.wage}/h` : '工价'
+}
+
+export function getHomeMemoFieldMarkup() {
+  return ''
+}
+
 /** Format Date to YYYY-MM-DD for date input */
 function toDateValue(date) {
   const pad = n => String(n).padStart(2, '0')
@@ -30,8 +41,8 @@ export async function render() {
   })
   let selectedJobId = defaultJob?.id || null
   const initDate = new Date()
-  const defaultStartTime = '00:00'
-  const defaultEndTime = '00:10'
+  const defaultStartTime = DEFAULT_START_TIME
+  const defaultEndTime = DEFAULT_END_TIME
 
   page.innerHTML = `
     <div class="page-header">
@@ -80,11 +91,11 @@ export async function render() {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);">
         <div class="form-group">
           <label class="form-label">休息时长（可选）</label>
-          <input type="number" class="form-input" id="home-break" inputmode="numeric" min="0" step="10" placeholder="休息分钟" />
+          <input type="number" class="form-input" id="home-break" inputmode="numeric" min="0" step="10" placeholder="分钟" />
         </div>
         <div class="form-group">
           <label class="form-label">工价（可选）</label>
-          <input type="number" class="form-input" id="home-wage" inputmode="decimal" min="0" step="0.5" placeholder="工价" />
+          <input type="number" class="form-input" id="home-wage" inputmode="decimal" min="0" step="0.5" placeholder="${getWagePlaceholder(defaultJob)}" />
         </div>
       </div>
 
@@ -101,11 +112,7 @@ export async function render() {
         <div id="home-gross" style="font-size:14px;color:var(--color-accent);font-weight:500;min-height:20px;margin-top:4px;"></div>
       </div>
 
-      <!-- Memo -->
-      <div class="form-group">
-        <label class="form-label">备注（可选）</label>
-        <input type="text" class="form-input" id="home-memo" placeholder="夜班、加班等..." maxlength="100" />
-      </div>
+      ${getHomeMemoFieldMarkup()}
 
       <div style="display:flex;gap:var(--space-3);">
         <button class="btn btn-ghost" id="home-reset" style="flex:1;">重置</button>
@@ -128,7 +135,6 @@ export async function render() {
   const gross = page.querySelector('#home-gross')
   const wageIn = page.querySelector('#home-wage')
   const breakIn = page.querySelector('#home-break')
-  const memoIn = page.querySelector('#home-memo')
   const copyLastBtn = page.querySelector('#home-copy-last')
   const saveBtn = page.querySelector('#home-save')
   const resetBtn = page.querySelector('#home-reset')
@@ -183,6 +189,7 @@ export async function render() {
   }
 
   function updateUI() {
+    wageIn.placeholder = getWagePlaceholder(getJob())
     const startTime = startIn.value
     const endTime = endIn.value
     const totalMinutes = getCurrentMinutes()
@@ -235,7 +242,6 @@ export async function render() {
     endIn.value = defaultEndTime
     wageIn.value = ''
     breakIn.value = ''
-    memoIn.value = ''
     if (defaultJob) {
       selectedJobId = defaultJob.id
       renderJobPicker()
@@ -267,7 +273,6 @@ export async function render() {
     endIn.value = endTime
     breakIn.value = last.breakMinutes ? String(last.breakMinutes) : ''
     wageIn.value = Number(last.wage) !== Number(job.wage) ? String(last.wage) : ''
-    memoIn.value = last.memo || ''
     updateUI()
     showToast('已复制上一次记录')
   })
@@ -304,7 +309,7 @@ export async function render() {
         })
         if (choice === 'cancel') { restoreSave(); return }
         if (choice === 'merge') {
-          await doMerge(sameDay, ts, memoIn.value, wage, breakMinutes)
+          await doMerge(sameDay, ts, '', wage, breakMinutes)
           showToast('已合并工时记录')
           resetForm(); return
         }
@@ -338,7 +343,7 @@ export async function render() {
         hours,
         date: getLocalDate(ts.startTs),
         yearMonth: getYearMonth(ts.startTs),
-        memo: memoIn.value,
+        memo: '',
         isSplit: false,
         source: 'manual'
       })
@@ -381,7 +386,6 @@ export async function render() {
     endIn.value = defaultEndTime
     wageIn.value = ''
     breakIn.value = ''
-    memoIn.value = ''
     restoreSave()
     updateUI()
   }
