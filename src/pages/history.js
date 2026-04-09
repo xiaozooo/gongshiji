@@ -308,10 +308,10 @@ function renderRangeControl(mode, range, monthAnchor, jobPeriod) {
 function renderKPI(summary) {
   return `
     <div class="stats-grid" style="margin-bottom:var(--space-3);">
-      <div class="stat-card stat-primary"><div class="stat-label">总工时</div><div class="stat-value">${formatHours(summary.totalHours)}h</div><div class="stat-sub">${summary.recordCount} 条记录</div></div>
-      <div class="stat-card stat-accent"><div class="stat-label">总收入</div><div class="stat-value" style="font-size:20px;">${fmtMoney(summary.totalIncome)}</div><div class="stat-sub">按记录工价</div></div>
-      <div class="stat-card"><div class="stat-label">出勤天数</div><div class="stat-value">${summary.workedDays}</div><div class="stat-sub">天</div></div>
-      <div class="stat-card"><div class="stat-label">平均时薪</div><div class="stat-value">${fmtMoney(summary.avgHourly)}</div><div class="stat-sub">加权平均</div></div>
+      <div class="stat-card stat-primary"><div class="stat-label">总工时</div><div class="stat-value" style="font-size:32px;font-family:var(--font-family-display);">${formatHours(summary.totalHours)}<span style="font-size:20px;font-family:var(--font-family);">h</span></div><div class="stat-sub">${summary.recordCount} 条记录</div></div>
+      <div class="stat-card stat-accent"><div class="stat-label">总收入</div><div class="stat-value" style="font-size:26px;font-family:var(--font-family-display);">${fmtMoney(summary.totalIncome)}</div><div class="stat-sub">按记录工价</div></div>
+      <div class="stat-card"><div class="stat-label">出勤天数</div><div class="stat-value" style="font-size:32px;font-family:var(--font-family-display);">${summary.workedDays}</div><div class="stat-sub">天</div></div>
+      <div class="stat-card"><div class="stat-label">平均时薪</div><div class="stat-value" style="font-size:24px;font-family:var(--font-family-display);">${fmtMoney(summary.avgHourly)}</div><div class="stat-sub">加权平均</div></div>
     </div>
   `
 }

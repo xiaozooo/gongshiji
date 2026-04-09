@@ -63,10 +63,10 @@ export async function render() {
     <div class="page-content">
 
       ${jobs.length === 0 ? `
-        <div class="card" style="margin-bottom:var(--space-4);border-color:#fcd34d;background:#fffbeb;">
-          <div style="font-size:20px;margin-bottom:4px;">💼</div>
+        <div style="padding:var(--space-8) 0;text-align:center;background:var(--color-card-bg);border-radius:var(--radius-lg);margin-bottom:var(--space-4);box-shadow:var(--shadow-sm);">
+          <div style="font-size:var(--font-size-2xl);font-family:var(--font-family-display);font-weight:600;margin-bottom:8px;color:var(--color-text);">Start your day</div>
           <div class="text-sm text-secondary">
-            还没有工作，请前往 <a href="#settings" style="color:var(--color-primary)">设置</a> 添加。
+            还没有工作，请前往 <a href="#settings" style="color:var(--color-primary);font-weight:500;">设置</a> 添加。
           </div>
         </div>
       ` : ''}
@@ -115,12 +115,12 @@ export async function render() {
 
       <!-- Duration display -->
       <div class="card-white" style="text-align:center;margin-bottom:var(--space-4);">
-        <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.4px;">工作时长</div>
+        <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.4px;font-weight:500;">工作时长</div>
         <div class="minute-display">
-          <span id="home-min-num">0</span><span class="minute-unit">小时</span>
+          <span id="home-min-num">0</span><span class="minute-unit">h</span>
         </div>
         <div id="home-hour-sub" style="font-size:13px;color:var(--color-text-muted);min-height:18px;"></div>
-        <div id="home-gross" style="font-size:14px;color:var(--color-accent);font-weight:500;min-height:20px;margin-top:4px;"></div>
+        <div id="home-gross" style="font-size:24px;font-family:var(--font-family-display);color:var(--color-accent);font-weight:600;min-height:32px;margin-top:8px;"></div>
       </div>
 
       ${getHomeMemoFieldMarkup()}
@@ -155,14 +155,16 @@ export async function render() {
   function renderJobPicker() {
     jobPicker.innerHTML = displayJobs.map(j => {
       const active = j.id === selectedJobId
-      const border = active ? 'var(--color-primary)' : 'var(--color-border-dark)'
-      const bg = active ? 'var(--color-primary-light)' : 'var(--color-bg)'
+      const bg = active ? 'var(--color-primary-light)' : 'var(--color-surface-2)'
       const jobColor = j.color || pickJobColor(j.id)
-      const titleColor = active ? jobColor : 'var(--color-text-secondary)'
-      const metaColor = active ? jobColor : 'var(--color-text-muted)'
-      return `<button type="button" class="btn" data-job-id="${j.id}" style="border:1px solid ${border};background:${bg};padding:10px 12px;min-width:132px;text-align:left;line-height:1.35;display:flex;flex-direction:column;align-items:flex-start;">
-        <div style="font-weight:600;font-size:14px;color:${titleColor};">${j.name}${j.isDefault ? ' ★' : ''}</div>
-        <div style="font-size:12px;color:${metaColor};margin-top:2px;">¥${j.wage}/h</div>
+      const titleColor = active ? 'var(--color-primary)' : 'var(--color-text)'
+      const metaColor = active ? 'var(--color-primary)' : 'var(--color-text-muted)'
+      return `<button type="button" class="btn" data-job-id="${j.id}" style="border:none;background:${bg};padding:10px 16px;border-radius:var(--radius-full);min-width:120px;text-align:left;line-height:1.35;display:flex;flex-direction:column;align-items:flex-start;transition:all var(--transition-fast);">
+        <div style="font-weight:600;font-size:14px;color:${titleColor};display:flex;align-items:center;gap:6px;">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${jobColor};"></span>
+          ${j.name}${j.isDefault ? ' ★' : ''}
+        </div>
+        <div style="font-size:12px;color:${metaColor};margin-top:2px;padding-left:14px;">¥${j.wage}/h</div>
       </button>`
     }).join('')
   }

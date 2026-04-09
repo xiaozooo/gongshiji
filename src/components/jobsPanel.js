@@ -19,20 +19,26 @@ async function redraw(container) {
   container.innerHTML = `
     <div class="section-header" style="margin-bottom:var(--space-3);">
       <span class="section-title">工作管理</span>
-      <button class="btn btn-primary btn-sm" id="jp-add">+ 新建工作</button>
+      <button class="btn btn-ghost btn-sm" id="jp-add" style="color:var(--color-primary);font-weight:600;">
+        <span style="font-size:16px;margin-right:2px;line-height:1;">+</span>新建工作
+      </button>
     </div>
 
     ${active.length === 0 ? `
-      <div style="text-align:center;padding:32px 0;color:var(--color-text-muted);font-size:14px;">
+      <div style="text-align:center;padding:32px 0;color:var(--color-text-muted);font-size:14px;background:var(--color-card-bg);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);">
         暂无工作，点击右上角新建
       </div>
     ` : active.map(j => jobRow(j, false)).join('')}
 
     ${archived.length > 0 ? `
-      <div class="section-header" style="margin-top:var(--space-5);">
-        <span class="section-title">已归档（${archived.length}）</span>
+      <div style="background:var(--color-surface-2);padding:16px;border-radius:var(--radius-lg);margin-top:var(--space-6);">
+        <div class="section-header" style="margin-bottom:12px;">
+          <span class="section-title">已归档（${archived.length}）</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${archived.map(j => jobRow(j, true)).join('')}
+        </div>
       </div>
-      ${archived.map(j => jobRow(j, true)).join('')}
     ` : ''}
   `
 
@@ -90,10 +96,10 @@ async function redraw(container) {
 function jobRow(job, isArchived) {
   const color = job.color || pickJobColor(job.id)
   const initials = [...job.name].slice(0, 2).join('')
-  const defaultBadge = job.isDefault ? `<span class="badge badge-accent" style="font-size:10px;margin-left:6px;">默认</span>` : ''
+  const defaultBadge = job.isDefault ? `<span class="badge badge-accent" style="font-size:10px;margin-left:6px;background:var(--color-accent-light);color:var(--color-accent);border:none;">默认</span>` : ''
   return `
     <div class="job-item${isArchived ? ' job-deleted' : ''}">
-      <div class="job-avatar" style="background:${color}">${initials}</div>
+      <div class="job-avatar" style="background:${color};border-radius:50%;">${initials}</div>
       <div class="job-info">
         <div class="job-name">${job.name}${defaultBadge}</div>
         <div class="job-wage">¥${job.wage}/小时${job.notes ? ' · ' + job.notes : ''}</div>

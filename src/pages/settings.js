@@ -11,18 +11,31 @@ export async function render() {
   page.className = 'page'
 
   page.innerHTML = `
-    <div class="page-header">
-      <span class="page-title">设置</span>
+    <div class="page-header" style="height:auto;padding-top:16px;padding-bottom:16px;align-items:flex-start;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <span class="page-title">设置</span>
+        <span style="font-size:13px;color:var(--color-text-secondary);font-weight:400;">管理你的偏好与数据安全</span>
+      </div>
     </div>
     <div class="page-content">
 
+      <!-- ── iOS 提醒 ── -->
+      <div class="card mb-4" style="border-left:4px solid var(--color-warning);background:var(--color-card-bg);display:flex;gap:12px;align-items:flex-start;padding:12px 16px;">
+        <div style="color:var(--color-warning);font-size:20px;line-height:1;">⚠️</div>
+        <div>
+          <div style="font-weight:600;font-size:14px;margin-bottom:4px;color:var(--color-text);">备份提醒</div>
+          <div style="font-size:13px;color:var(--color-text-secondary);line-height:1.5;">iOS 系统可能会自动清理本地存储，请定期导出备份以防数据丢失。</div>
+        </div>
+      </div>
+
       <!-- ── 工作管理 ── -->
+      <div class="section-header"><span class="section-title">工作管理</span></div>
       <div id="jobs-panel-host"></div>
 
       <div class="divider"></div>
 
-      <!-- ── 导出 ── -->
-      <div class="section-header"><span class="section-title">导出数据</span></div>
+      <!-- ── 数据同步 ── -->
+      <div class="section-header"><span class="section-title">数据同步</span></div>
       <div class="settings-list mb-4">
         <div class="settings-item" id="s-csv">
           <div class="settings-item-icon">📊</div>
@@ -32,11 +45,6 @@ export async function render() {
           </div>
           <span class="settings-item-arrow">›</span>
         </div>
-      </div>
-
-      <!-- ── 导入 ── -->
-      <div class="section-header"><span class="section-title">导入数据</span></div>
-      <div class="settings-list mb-4">
         <div class="settings-item" id="s-import-csv">
           <div class="settings-item-icon">📑</div>
           <div class="settings-item-info">
@@ -47,22 +55,18 @@ export async function render() {
         </div>
       </div>
 
-      <!-- ── 安装 ── -->
-      <div class="section-header"><span class="section-title">安装应用</span></div>
-      <div class="card mb-4" style="font-size:14px;line-height:1.8;color:var(--color-text-secondary);">
+      <!-- ── 更多 ── -->
+      <div class="section-header"><span class="section-title">更多</span></div>
+      <div class="card mb-4" style="background:var(--color-card-bg);font-size:13px;line-height:1.8;color:var(--color-text-secondary);padding:16px;">
+        <div style="font-weight:600;color:var(--color-text);margin-bottom:8px;">安装应用</div>
         <strong>iPhone / iPad：</strong>Safari → 底部分享按钮（□↑）→ 添加到主屏幕<br/>
         <strong>Android / 桌面：</strong>浏览器地址栏右侧安装图标，点击即可
       </div>
 
-      <div class="card mb-4" style="border-color:#fcd34d;background:#fffbeb;font-size:14px;line-height:1.7;color:#92400e;">
-        ⚠️ <strong>iOS 用户：</strong>Safari 长期不访问可能清除本地数据，建议每周导出一次备份。
-      </div>
-
       <!-- ── 危险 ── -->
-      <div class="section-header"><span class="section-title">危险操作</span></div>
-      <div class="settings-list">
-        <div class="settings-item" id="s-clear" style="border-color:#fecaca;background:#fef2f2;">
-          <div class="settings-item-icon" style="background:#fee2e2;">🗑️</div>
+      <div class="section-header"><span class="section-title" style="color:var(--color-danger);">危险操作</span></div>
+      <div class="settings-list mb-4">
+        <div class="settings-item" id="s-clear">
           <div class="settings-item-info">
             <div class="settings-item-title" style="color:var(--color-danger);">清除所有数据</div>
             <div class="settings-item-desc">不可恢复，请先备份</div>
@@ -71,6 +75,9 @@ export async function render() {
         </div>
       </div>
 
+      <div style="text-align:center;padding:24px 0;font-size:12px;color:var(--color-text-muted);">
+        版本 2.4.0 • 纯本地存储数据
+      </div>
     </div>
   `
 
