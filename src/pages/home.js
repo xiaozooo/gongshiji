@@ -5,13 +5,11 @@ import { showModalPromise } from '../components/modal.js'
 import { getLocalDate, getYearMonth, formatHours, calcMinutes, calcNetWorkMinutes, localDateTimeToISO } from '../utils/time.js'
 import { pickJobColor } from '../utils/colors.js'
 import { resolveCopyDate } from '../utils/recordCopy.js'
+import { getWagePlaceholder } from '../utils/wage.js'
 
 export const DEFAULT_START_TIME = '09:00'
 export const DEFAULT_END_TIME = '17:00'
-
-export function getWagePlaceholder(job) {
-  return job ? `¥${job.wage}` : '工价'
-}
+export { getWagePlaceholder }
 
 export function getHomeMemoFieldMarkup() {
   return ''

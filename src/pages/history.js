@@ -1,4 +1,4 @@
-import { getRecordsByDateRange, updateRecord, deleteRecord } from '../db/recordStore.js'
+import { getRecordsByDateRange, updateRecord, deleteRecord, getOverlappingRecords } from '../db/recordStore.js'
 import { getAllJobs } from '../db/jobStore.js'
 import { showToast } from '../components/toast.js'
 import { showModal, showModalPromise } from '../components/modal.js'
@@ -7,12 +7,13 @@ import {
   formatTime,
   formatHours,
   getLocalDate,
+  getYearMonth,
   calcMinutes,
   calcNetWorkMinutes,
-  toLocalInputValue,
-  localInputToISO
+  localDateTimeToISO
 } from '../utils/time.js'
 import { pickJobColor } from '../utils/colors.js'
+import { getWagePlaceholder, getWageInputValueForEdit } from '../utils/wage.js'
 import {
   getWeekRange,
   getMonthRange,
@@ -26,9 +27,17 @@ export function getHistoryHeaderActionsMarkup() {
   return ''
 }
 
+export const HISTORY_RECORD_ACTION_TRIGGER = 'click'
+
 function toDateParts(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number)
   return new Date(y, m - 1, d)
+}
+
+function toTimeValue(timestamp) {
+  const d = new Date(timestamp)
+  const pad = n => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 function addDays(dateStr, delta) {
@@ -109,10 +118,10 @@ export async function render() {
       </div>
     `
 
-    bindEvents({ records })
+    bindEvents({ records, jobs })
   }
 
-  function bindEvents({ records }) {
+  function bindEvents({ records, jobs }) {
     page.querySelector('#hist-mode-switcher')?.addEventListener('click', e => {
       const btn = e.target.closest('[data-mode]')
       if (!btn) return
@@ -161,12 +170,14 @@ export async function render() {
     page.querySelectorAll('[data-rec-open]').forEach(el => {
       const rec = records.find(r => r.id === el.dataset.recOpen)
       if (!rec) return
-      bindRecordLongPress(el, rec, reload)
+      el.addEventListener(HISTORY_RECORD_ACTION_TRIGGER, () => {
+        openRecordActions(rec, jobs, reload)
+      })
     })
 
   }
 
-  async function openRecordActions(rec, reload) {
+  async function openRecordActions(rec, jobs, reload) {
     const choice = await showModalPromise({
       title: rec.jobName,
       description: `${formatTime(rec.startTimestamp)} - ${formatTime(rec.endTimestamp)}`,
@@ -176,7 +187,7 @@ export async function render() {
         { label: '取消', value: 'cancel', type: 'ghost' }
       ]
     })
-    if (choice === 'edit') showEditModal(rec, reload)
+    if (choice === 'edit') showEditModal(rec, jobs, reload)
     if (choice === 'delete') await deleteWithUndo(rec, reload)
   }
 
@@ -215,48 +226,6 @@ export async function render() {
       undoState = null
       await onUndo?.()
     })
-  }
-
-  function bindRecordLongPress(contentEl, rec, reload) {
-    let startX = 0
-    let startY = 0
-    let moved = false
-    let longPressTimer = null
-    let longPressed = false
-
-    function onStart(e) {
-      const p = e.touches ? e.touches[0] : e
-      startX = p.clientX
-      startY = p.clientY
-      moved = false
-      longPressed = false
-      longPressTimer = setTimeout(async () => {
-        longPressed = true
-        await openRecordActions(rec, reload)
-      }, 450)
-    }
-
-    function onMove(e) {
-      const p = e.touches ? e.touches[0] : e
-      const mx = p.clientX - startX
-      const my = p.clientY - startY
-      if (Math.abs(mx) > 8 || Math.abs(my) > 8) moved = true
-      if (moved && longPressTimer) clearTimeout(longPressTimer)
-    }
-
-    function onEnd() {
-      if (longPressTimer) clearTimeout(longPressTimer)
-      if (longPressed) return
-      // 单击不触发任何操作；仅长按触发操作菜单
-    }
-
-    contentEl.addEventListener('touchstart', onStart, { passive: true })
-    contentEl.addEventListener('touchmove', onMove, { passive: true })
-    contentEl.addEventListener('touchend', onEnd)
-    contentEl.addEventListener('mousedown', onStart)
-    contentEl.addEventListener('mousemove', onMove)
-    contentEl.addEventListener('mouseup', onEnd)
-    contentEl.addEventListener('mouseleave', onEnd)
   }
 
   await reload()
@@ -459,53 +428,93 @@ function renderJobSummaryList(jobsAgg, jobColorMap, sortBy = 'income') {
   `
 }
 
-function showEditModal(rec, onSaved) {
-  const startVal = toLocalInputValue(rec.startTimestamp)
-  const endVal = toLocalInputValue(rec.endTimestamp)
-  showModal({
-    title: '编辑记录',
-    content: `
-      <div class="form-group">
-        <label class="form-label">工作</label>
-        <input class="form-input" value="${rec.jobName}" disabled />
-      </div>
+export function buildHistoryEditModalContent({ rec, dateValue, startTimeValue, endTimeValue, wagePlaceholder, wageValue }) {
+  const breakValue = Number(rec.breakMinutes || 0)
+  return `
+    <div class="form-group">
+      <label class="form-label">工作</label>
+      <input class="form-input" value="${rec.jobName}" disabled />
+    </div>
+    <div class="form-group">
+      <label class="form-label">日期</label>
+      <input class="form-input" id="er-date" type="date" value="${dateValue}" />
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);">
       <div class="form-group">
         <label class="form-label">开始时间</label>
-        <input class="form-input" id="er-start" type="datetime-local" step="600" value="${startVal}" />
+        <input class="form-input" id="er-start" type="time" step="600" value="${startTimeValue}" />
       </div>
       <div class="form-group">
         <label class="form-label">结束时间</label>
-        <input class="form-input" id="er-end" type="datetime-local" step="600" value="${endVal}" />
+        <input class="form-input" id="er-end" type="time" step="600" value="${endTimeValue}" />
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);">
+      <div class="form-group">
+        <label class="form-label">休息时长（可选）</label>
+        <input class="form-input" id="er-break" type="number" inputmode="numeric" min="0" step="10" value="${breakValue}" placeholder="分钟" />
       </div>
       <div class="form-group">
-        <label class="form-label">休息时长（分钟）</label>
-        <input class="form-input" id="er-break" type="number" inputmode="numeric" min="0" step="10" value="${rec.breakMinutes || 0}" />
+        <label class="form-label">工价（可选）</label>
+        <input class="form-input" id="er-wage" type="number" inputmode="decimal" min="0" step="0.5" value="${wageValue}" placeholder="${wagePlaceholder}" />
       </div>
-      <div class="form-group">
-        <label class="form-label">备注</label>
-        <input class="form-input" id="er-memo" type="text" value="${rec.memo || ''}" />
-      </div>
-    `,
+    </div>
+  `
+}
+
+function showEditModal(rec, jobs, onSaved) {
+  const job = jobs.find(item => item.id === rec.jobId)
+  const dateValue = getLocalDate(rec.startTimestamp)
+  const startTimeValue = toTimeValue(rec.startTimestamp)
+  const endTimeValue = toTimeValue(rec.endTimestamp)
+  const wagePlaceholder = getWagePlaceholder(job)
+  const wageValue = getWageInputValueForEdit(rec.wage, job?.wage)
+  showModal({
+    title: '编辑记录',
+    content: buildHistoryEditModalContent({ rec, dateValue, startTimeValue, endTimeValue, wagePlaceholder, wageValue }),
     buttons: [
       {
         label: '保存', id: 'er-save', type: 'primary',
         onClick: async () => {
-          const newStart = localInputToISO(document.getElementById('er-start').value)
-          const newEnd = localInputToISO(document.getElementById('er-end').value)
+          const dateIn = document.getElementById('er-date').value
+          const startIn = document.getElementById('er-start').value
+          const endIn = document.getElementById('er-end').value
           const breakMinutes = Math.max(0, parseInt(document.getElementById('er-break').value || '0', 10) || 0)
-          const memo = document.getElementById('er-memo').value
-          if (new Date(newEnd) <= new Date(newStart)) { showToast('结束时间须晚于开始时间', 'error'); return }
+          const wageRaw = document.getElementById('er-wage').value.trim()
+          if (!dateIn || !startIn || !endIn) { showToast('请完整填写日期与时间', 'error'); return }
+          if (endIn <= startIn) { showToast('结束时间须晚于开始时间', 'error'); return }
+          const newStart = localDateTimeToISO(dateIn, startIn)
+          const newEnd = localDateTimeToISO(dateIn, endIn)
           const totalMinutes = calcMinutes(newStart, newEnd)
           if (breakMinutes >= totalMinutes) { showToast('休息时长必须小于总时长', 'error'); return }
+          const customWage = wageRaw === '' ? NaN : Number(wageRaw)
+          if (wageRaw !== '' && (!Number.isFinite(customWage) || customWage < 0)) {
+            showToast('工价必须是大于等于0的数字', 'error')
+            return
+          }
+          const fallbackWage = Number.isFinite(Number(job?.wage)) ? Number(job.wage) : Number(rec.wage || 0)
+          const wage = Number.isFinite(customWage) ? customWage : fallbackWage
+          const overlapping = await getOverlappingRecords(newStart, newEnd, rec.id)
+          if (overlapping.length > 0) {
+            const choice = await showModalPromise({
+              title: '检测到时间重叠',
+              description: `与已有 ${overlapping.length} 条记录时间重叠。`,
+              options: [
+                { label: '允许重叠继续保存', value: 'allow', type: 'warning' },
+                { label: '取消', value: 'cancel', type: 'ghost' }
+              ]
+            })
+            if (choice === 'cancel') return
+          }
           const workMinutes = calcNetWorkMinutes(totalMinutes, breakMinutes)
           await updateRecord(rec.id, {
             startTimestamp: newStart,
             endTimestamp: newEnd,
+            wage,
             breakMinutes,
             hours: Math.round((workMinutes / 60) * 100) / 100,
             date: getLocalDate(newStart),
-            yearMonth: getLocalDate(newStart).slice(0, 7),
-            memo
+            yearMonth: getYearMonth(newStart)
           })
           showToast('记录已更新')
           onSaved()
