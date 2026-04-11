@@ -28,6 +28,14 @@ export function getHistoryHeaderActionsMarkup() {
 }
 
 export const HISTORY_RECORD_ACTION_TRIGGER = 'click'
+let ChartCtorPromise = null
+
+async function getChartCtor() {
+  if (!ChartCtorPromise) {
+    ChartCtorPromise = import('chart.js/auto').then(mod => mod.default || mod.Chart || mod)
+  }
+  return ChartCtorPromise
+}
 
 function toDateParts(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number)
@@ -72,6 +80,7 @@ export async function render() {
   let activeDateFilter = null
   let jobSortBy = 'income' // income | hours | records
   let undoState = null
+  let trendChart = null
 
   async function reload() {
     const jobs = await getAllJobs(true)
@@ -84,6 +93,12 @@ export async function render() {
     const jobsAgg = aggregateJobs(records)
     const detailRecords = activeDateFilter ? records.filter(r => r.date === activeDateFilter) : records
     const detail = buildDetail(detailRecords)
+    const trendPoints = mode === 'job' ? [] : buildTrendPoints(daily, range.start, range.end)
+
+    if (trendChart) {
+      trendChart.destroy()
+      trendChart = null
+    }
 
     page.innerHTML = `
       <div class="page-header">
@@ -106,7 +121,7 @@ export async function render() {
 
         ${mode === 'job'
           ? renderJobCharts(jobsAgg, jobColorMap)
-          : renderTrendCharts(daily, range.start, range.end)
+          : renderTrendChartCard(trendPoints)
         }
 
         ${records.length === 0
@@ -119,6 +134,17 @@ export async function render() {
     `
 
     bindEvents({ records, jobs })
+    if (mode !== 'job') {
+      trendChart = await mountTrendChart({
+        page,
+        points: trendPoints,
+        activeDateFilter,
+        onPickDate: date => {
+          activeDateFilter = activeDateFilter === date ? null : date
+          reload()
+        }
+      })
+    }
   }
 
   function bindEvents({ records, jobs }) {
@@ -145,14 +171,6 @@ export async function render() {
       jobPeriod = e.target.value
       activeDateFilter = null
       reload()
-    })
-
-    page.querySelectorAll('[data-chart-date]').forEach(btn => {
-      btn.onclick = () => {
-        const d = btn.dataset.chartDate
-        activeDateFilter = activeDateFilter === d ? null : d
-        reload()
-      }
     })
 
     page.querySelectorAll('[data-job-sort]').forEach(btn => {
@@ -294,41 +312,166 @@ function renderActiveFilters(activeDateFilter) {
   `
 }
 
-function renderTrendCharts(daily, start, end) {
+function buildTrendPoints(daily, start, end) {
   const dates = enumerateDates(start, end)
   const index = new Map(daily.map(d => [d.date, d]))
-  const points = dates.map(d => index.get(d) || { date: d, hours: 0, income: 0 })
-  const maxHours = Math.max(1, ...points.map(p => p.hours))
-  const maxIncome = Math.max(1, ...points.map(p => p.income))
+  return dates.map(d => {
+    const item = index.get(d)
+    return {
+      date: d,
+      dayLabel: String(Number(d.slice(-2))),
+      hours: Number(item?.hours || 0),
+      income: Number(item?.income || 0)
+    }
+  })
+}
 
-  const bars = points.map(p => {
-    const h = Math.max(4, Math.round((p.hours / maxHours) * 72))
-    return `<button class="btn btn-ghost btn-sm" data-chart-date="${p.date}" style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:24px;padding:0 2px;">
-      <div title="${p.date} · ${formatHours(p.hours)}h" style="width:16px;height:${h}px;background:var(--color-primary);border-radius:4px 4px 0 0;"></div>
-      <div style="font-size:11px;color:var(--color-text-muted);">${Number(p.date.slice(-2))}</div>
-    </button>`
-  }).join('')
-
-  const linePts = points.map((p, i) => {
-    const x = points.length <= 1 ? 0 : (i / (points.length - 1)) * 100
-    const y = 100 - (p.income / maxIncome) * 100
-    return `${x},${y}`
-  }).join(' ')
-
+function renderTrendChartCard(points) {
+  const hasValue = points.some(p => p.hours > 0 || p.income > 0)
   return `
-    <div class="card" style="margin-bottom:var(--space-3);">
-      <div style="font-weight:600;margin-bottom:8px;">工时趋势</div>
-      <div style="display:flex;align-items:flex-end;gap:8px;overflow:auto;padding-bottom:4px;">${bars}</div>
-    </div>
-    <div class="card" style="margin-bottom:var(--space-4);">
-      <div style="font-weight:600;margin-bottom:8px;">收入趋势</div>
-      <div style="height:100px;position:relative;background:var(--color-surface);border-radius:8px;padding:6px;">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:100%;">
-          <polyline fill="none" stroke="var(--color-accent)" stroke-width="2" points="${linePts}" />
-        </svg>
+    <div class="hist-trend-card">
+      <div class="hist-trend-head">
+        <div class="hist-trend-title">趋势概览</div>
+        <div class="hist-trend-sub">柱：工时（h） · 线：收入（¥）</div>
+      </div>
+      <div class="hist-trend-canvas chartjs">
+        <canvas id="hist-trend-canvas" aria-label="工时与收入趋势图"></canvas>
+        ${!hasValue ? `<div class="hist-trend-empty">当前范围暂无趋势波动</div>` : ''}
+      </div>
+      <div class="hist-trend-axis">
+        <span>${Number(points[0]?.date?.slice(-2) || 0)}</span>
+        <span>${Number(points[points.length - 1]?.date?.slice(-2) || 0)}</span>
       </div>
     </div>
   `
+}
+
+export function buildHistoryChartDatasets(points, activeDateFilter = null) {
+  return [
+    {
+      type: 'bar',
+      label: '工时',
+      yAxisID: 'yHours',
+      data: points.map(p => p.hours),
+      backgroundColor: points.map(p => p.date === activeDateFilter ? 'rgba(37,99,235,0.55)' : 'rgba(37,99,235,0.32)'),
+      borderColor: points.map(p => p.date === activeDateFilter ? '#1d4ed8' : '#2563eb'),
+      borderWidth: points.map(p => p.date === activeDateFilter ? 1.2 : 1),
+      borderRadius: 3,
+      barPercentage: 0.64,
+      categoryPercentage: 0.86,
+      order: 2
+    },
+    {
+      type: 'line',
+      label: '收入',
+      yAxisID: 'yIncome',
+      data: points.map(p => p.income),
+      borderColor: '#ea580c',
+      borderWidth: 1.8,
+      tension: 0.28,
+      fill: false,
+      pointRadius: points.map(p => p.date === activeDateFilter ? 4 : 0),
+      pointHoverRadius: 4,
+      pointBackgroundColor: '#ea580c',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 1.5,
+      order: 1
+    }
+  ]
+}
+
+export function buildHistoryChartOptions(points, activeDateFilter = null) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 180 },
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        align: 'start',
+        labels: {
+          boxWidth: 10,
+          boxHeight: 10,
+          color: '#6b7280',
+          usePointStyle: true,
+          pointStyle: 'circle'
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: ctx => {
+            if (ctx.dataset.yAxisID === 'yHours') return `工时 ${Number(ctx.parsed.y || 0).toFixed(2)}h`
+            return `收入 ¥${Number(ctx.parsed.y || 0).toFixed(2)}`
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: {
+          color: '#6b7280',
+          autoSkip: false,
+          maxRotation: 0,
+          minRotation: 0,
+          callback: (value, index) => {
+            if (index === 0 || index === points.length - 1) return points[index]?.dayLabel || ''
+            const span = points.length > 20 ? 5 : 3
+            return index % span === 0 ? points[index]?.dayLabel || '' : ''
+          }
+        }
+      },
+      yHours: {
+        position: 'left',
+        beginAtZero: true,
+        grid: {
+          color: '#e5e7eb',
+          lineWidth: 0.8,
+          drawTicks: false
+        },
+        ticks: {
+          color: '#64748b',
+          callback: v => `${v}h`
+        }
+      },
+      yIncome: {
+        position: 'right',
+        beginAtZero: true,
+        grid: { drawOnChartArea: false },
+        ticks: {
+          color: '#9a3412',
+          callback: v => `¥${v}`
+        }
+      }
+    },
+    activeDateFilter
+  }
+}
+
+async function mountTrendChart({ page, points, activeDateFilter, onPickDate }) {
+  const canvas = page.querySelector('#hist-trend-canvas')
+  if (!canvas || points.length === 0) return null
+
+  const ChartCtor = await getChartCtor()
+  const datasets = buildHistoryChartDatasets(points, activeDateFilter)
+  const options = buildHistoryChartOptions(points, activeDateFilter)
+  options.onClick = (evt, _els, chart) => {
+    const hits = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: false }, true)
+    if (!hits.length) return
+    const date = points[hits[0].index]?.date
+    if (date) onPickDate(date)
+  }
+
+  return new ChartCtor(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: points.map(p => p.dayLabel),
+      datasets
+    },
+    options
+  })
 }
 
 function renderJobCharts(jobsAgg, jobColorMap) {

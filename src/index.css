@@ -409,6 +409,85 @@ body {
   margin-top: 4px;
 }
 
+/* ── Home Job Picker ── */
+.home-job-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.home-job-card {
+  min-height: 52px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-surface) 100%);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+  touch-action: manipulation;
+}
+
+.home-job-card:hover {
+  border-color: var(--color-primary-border);
+}
+
+.home-job-card.active {
+  border-color: var(--color-primary);
+  background: linear-gradient(180deg, #f7fbff 0%, var(--color-primary-light) 100%);
+  box-shadow: var(--shadow-xs);
+}
+
+.home-job-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.home-job-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.home-job-card.active .home-job-title {
+  color: var(--color-primary-hover);
+}
+
+.home-job-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.home-job-meta {
+  margin-top: 2px;
+  padding-left: 14px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-job-card.active .home-job-meta {
+  color: var(--color-primary);
+}
+
+.home-job-rate {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
 /* ── Hours Display ── */
 .hour-display {
   font-size: 42px;
@@ -1093,6 +1172,69 @@ body {
 
 .view-switch-btn:hover:not(.active) {
   color: var(--color-text-secondary);
+}
+
+/* ── History Trend ── */
+.hist-trend-card {
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+}
+
+.hist-trend-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+  gap: var(--space-2);
+}
+
+.hist-trend-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.hist-trend-sub {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.hist-trend-canvas {
+  position: relative;
+  height: 168px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, #fafbfd 0%, #f3f6fb 100%);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  padding: 8px 10px 2px;
+}
+
+.hist-trend-canvas canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.hist-trend-empty {
+  position: absolute;
+  inset: 0 10px 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(255, 255, 255, 0.78) 100%);
+  pointer-events: none;
+}
+
+.hist-trend-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--color-text-muted);
 }
 
 /* ── Calendar Grid ── */

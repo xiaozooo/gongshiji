@@ -28,8 +28,6 @@ export async function render() {
         </div>
       </div>
 
-      <!-- ── 工作管理 ── -->
-      <div class="section-header"><span class="section-title">工作管理</span></div>
       <div id="jobs-panel-host"></div>
 
       <div class="divider"></div>

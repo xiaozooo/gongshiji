@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "chart.js": "^4.5.1",
     "idb": "^8.0.0"
   },
   "devDependencies": {

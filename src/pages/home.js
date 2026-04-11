@@ -75,7 +75,7 @@ export async function render() {
           <label class="form-label" style="margin-bottom:0;">工作</label>
           <button type="button" class="btn btn-ghost btn-sm" id="home-copy-last">复制上一次</button>
         </div>
-        <div id="home-job-picker" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        <div id="home-job-picker" class="home-job-grid"></div>
       </div>
 
       <!-- Date -->
@@ -153,16 +153,16 @@ export async function render() {
   function renderJobPicker() {
     jobPicker.innerHTML = displayJobs.map(j => {
       const active = j.id === selectedJobId
-      const bg = active ? 'var(--color-primary-light)' : 'var(--color-surface-2)'
       const jobColor = j.color || pickJobColor(j.id)
-      const titleColor = active ? 'var(--color-primary)' : 'var(--color-text)'
-      const metaColor = active ? 'var(--color-primary)' : 'var(--color-text-muted)'
-      return `<button type="button" class="btn" data-job-id="${j.id}" style="border:none;background:${bg};padding:10px 16px;border-radius:var(--radius-full);min-width:120px;text-align:left;line-height:1.35;display:flex;flex-direction:column;align-items:flex-start;transition:all var(--transition-fast);">
-        <div style="font-weight:600;font-size:14px;color:${titleColor};display:flex;align-items:center;gap:6px;">
-          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${jobColor};"></span>
-          ${j.name}${j.isDefault ? ' ★' : ''}
+      return `<button type="button" class="home-job-card${active ? ' active' : ''}" data-job-id="${j.id}">
+        <div class="home-job-main">
+          <div class="home-job-title">
+            <span class="home-job-dot" style="background:${jobColor};"></span>
+            <span>${j.name}</span>
+          </div>
+          <div class="home-job-meta">${j.isDefault ? '默认工作' : (j.notes || '点击选择')}</div>
         </div>
-        <div style="font-size:12px;color:${metaColor};margin-top:2px;padding-left:14px;">¥${j.wage}/h</div>
+        <div class="home-job-rate">¥${j.wage}/h</div>
       </button>`
     }).join('')
   }
